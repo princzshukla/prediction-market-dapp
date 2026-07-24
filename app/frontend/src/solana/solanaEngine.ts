@@ -1,6 +1,6 @@
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import type { Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types';
+import type{ Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types';
 import {
   PROGRAM_ID,
   buildCreateMarketInstruction,
@@ -262,14 +262,29 @@ export class SolanaEngine {
 
   public async refreshBalance() {
     if (!this.wallet.publicKey) return;
-    if (this.network === 'devnet' || this.network === 'mainnet-beta') {
-      try {
-        const pk = new PublicKey(this.wallet.publicKey);
+    try {
+      const pk = new PublicKey(this.wallet.publicKey);
+      if (this.network === 'devnet' || this.network === 'mainnet-beta') {
         const balance = await this.connection.getBalance(pk);
         this.wallet.balanceLamports = balance;
-      } catch (e) {
-        // keep local state
+      } else {
+        // Simulation mode: try fetching devnet balance first if real wallet, else fallback to simulated balance
+        try {
+          const devnetConnection = new Connection(NETWORKS['devnet'].endpoint, 'confirmed');
+          const realBalance = await devnetConnection.getBalance(pk);
+          if (realBalance > 0) {
+            this.wallet.balanceLamports = realBalance;
+          } else if (this.wallet.balanceLamports === 0) {
+            this.wallet.balanceLamports = 5 * LAMPORTS_PER_SOL; // Default 5 SOL test balance for simulation
+          }
+        } catch {
+          if (this.wallet.balanceLamports === 0) {
+            this.wallet.balanceLamports = 5 * LAMPORTS_PER_SOL;
+          }
+        }
       }
+    } catch (e) {
+      console.warn('Could not fetch on-chain balance:', e);
     }
     this.notify();
   }

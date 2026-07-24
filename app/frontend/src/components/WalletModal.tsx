@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wallet,
   Sparkles,
@@ -44,9 +44,16 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [connectingPhantom, setConnectingPhantom] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [secretInput, setSecretInput] = useState('');
   const [secretError, setSecretError] = useState('');
   const [showSecretImport, setShowSecretImport] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && wallet.connected) {
+      solanaEngine.refreshBalance();
+    }
+  }, [isOpen, wallet.connected, network]);
 
   if (!isOpen) return null;
 
@@ -107,6 +114,12 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     }
   };
 
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    await solanaEngine.refreshBalance();
+    setTimeout(() => setRefreshing(false), 500);
+  };
+
   const formattedBalance = (wallet.balanceLamports / 1e9).toFixed(3);
 
   return (
@@ -151,14 +164,24 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                 </div>
 
                 {/* Balance */}
-                <div className="flex items-baseline justify-between pt-2 border-t border-slate-900">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-900">
                   <span className="text-xs text-slate-400">Balance</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold font-mono text-emerald-400">{formattedBalance} SOL</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-400 break-all">
+                      {formattedBalance} <span className="text-sm sm:text-base font-semibold text-emerald-300">SOL</span>
+                    </span>
+                    <button
+                      onClick={handleManualRefresh}
+                      disabled={refreshing}
+                      className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-900 rounded-lg transition-colors border border-slate-800 shrink-0"
+                      title="Refresh Balance"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                    </button>
                     <button
                       onClick={onRequestAirdrop}
                       disabled={airdropping}
-                      className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      className="px-2.5 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 shrink-0"
                       title="Request 5 SOL Airdrop"
                     >
                       {airdropping ? (
