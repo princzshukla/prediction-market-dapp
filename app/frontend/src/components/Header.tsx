@@ -15,7 +15,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import type { WalletState, NetworkType } from '../types';
+import type{ WalletState, NetworkType } from '../types';
 import { PROGRAM_ID_STR } from '../solana/anchorClient';
 
 interface HeaderProps {
@@ -147,7 +147,7 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Right Action Tools & Wallet */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Create Market Button (Desktop & Tablet) */}
             <button
               onClick={onOpenCreateModal}
@@ -157,19 +157,19 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Create Market</span>
             </button>
 
-            {/* IDL Inspector */}
+            {/* IDL Inspector (Hidden on mobile top bar, available in drawer) */}
             <button
               onClick={onOpenIdlModal}
-              className="p-1.5 sm:p-2 text-slate-400 hover:text-purple-300 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors"
+              className="hidden md:flex p-1.5 sm:p-2 text-slate-400 hover:text-purple-300 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors"
               title="Anchor IDL & PDA Inspector"
             >
               <Code2 className="w-4 h-4" />
             </button>
 
-            {/* Tx History */}
+            {/* Tx History (Hidden on mobile top bar, available in drawer) */}
             <button
               onClick={onOpenTxLogs}
-              className="p-1.5 sm:p-2 text-slate-400 hover:text-purple-300 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors"
+              className="hidden md:flex p-1.5 sm:p-2 text-slate-400 hover:text-purple-300 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors"
               title="Transaction Logs"
             >
               <History className="w-4 h-4" />
@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
             <select
               value={network}
               onChange={(e) => onSetNetwork(e.target.value as NetworkType)}
-              className="hidden sm:block bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2 sm:px-2.5 py-1.5 focus:outline-none focus:border-purple-500 transition-colors"
+              className="hidden md:block bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2 sm:px-2.5 py-1.5 focus:outline-none focus:border-purple-500 transition-colors"
             >
               <option value="simulation">Simulation</option>
               <option value="devnet">Devnet</option>
@@ -188,11 +188,11 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Wallet Section */}
             {wallet.connected && wallet.publicKey ? (
-              <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl">
-                {/* Balance & Airdrop */}
-                <div className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800/80">
-                  <span className="text-[11px] sm:text-xs font-bold font-mono text-emerald-400">
-                    {formattedBalance} <span className="hidden xs:inline">SOL</span>
+              <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl max-w-[180px] sm:max-w-none">
+                {/* Balance & Airdrop (Desktop/Tablet) */}
+                <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800/80">
+                  <span className="text-xs font-bold font-mono text-emerald-400">
+                    {formattedBalance} SOL
                   </span>
                   <button
                     onClick={onRequestAirdrop}
@@ -208,14 +208,14 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
 
-                {/* Account Trigger */}
+                {/* Account Trigger (Mobile & Desktop) */}
                 <button
                   onClick={onOpenWalletModal}
-                  className="px-2 py-1 text-xs font-mono text-purple-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+                  className="px-2.5 py-1 text-xs font-mono text-purple-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
                   title="Manage Wallet Account"
                 >
-                  <Wallet className="w-3.5 h-3.5 text-purple-400" />
-                  <span>
+                  <Wallet className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                  <span className="truncate">
                     {wallet.publicKey.slice(0, 3)}...{wallet.publicKey.slice(-3)}
                   </span>
                 </button>
@@ -223,17 +223,17 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={onOpenWalletModal}
-                className="px-3 sm:px-4 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl transition-all shadow-md shadow-purple-600/30 flex items-center gap-1.5 active:scale-95"
+                className="px-2.5 sm:px-4 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl transition-all shadow-md shadow-purple-600/30 flex items-center gap-1.5 active:scale-95 shrink-0"
               >
                 <Wallet className="w-3.5 h-3.5" />
-                <span>Connect Wallet</span>
+                <span className="whitespace-nowrap">Connect Wallet</span>
               </button>
             )}
 
             {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors"
+              className="lg:hidden p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-900 border border-slate-800 rounded-lg transition-colors shrink-0"
               aria-label="Toggle Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -285,16 +285,27 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Extra Mobile Actions */}
-            <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={() => {
                   onOpenCreateModal();
                   setMobileMenuOpen(false);
                 }}
-                className="flex-1 py-2 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                className="col-span-2 py-2 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Create Market</span>
+                <span>Create Prediction Market</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  onRequestAirdrop();
+                }}
+                disabled={airdropping}
+                className="py-2 px-3 text-xs font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-500/30 rounded-xl flex items-center justify-center gap-1.5"
+              >
+                <Droplets className="w-3.5 h-3.5" />
+                <span>{airdropping ? 'Airdropping...' : 'Airdrop 5 SOL'}</span>
               </button>
 
               <select
@@ -306,6 +317,28 @@ export const Header: React.FC<HeaderProps> = ({
                 <option value="devnet">Devnet</option>
                 <option value="mainnet-beta">Mainnet</option>
               </select>
+
+              <button
+                onClick={() => {
+                  onOpenIdlModal();
+                  setMobileMenuOpen(false);
+                }}
+                className="py-2 px-3 text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5"
+              >
+                <Code2 className="w-3.5 h-3.5 text-purple-400" />
+                <span>IDL & PDA Inspector</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  onOpenTxLogs();
+                  setMobileMenuOpen(false);
+                }}
+                className="py-2 px-3 text-xs font-medium bg-slate-900 text-slate-300 border border-slate-800 rounded-xl flex items-center justify-center gap-1.5"
+              >
+                <History className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Transaction History</span>
+              </button>
             </div>
           </div>
         )}

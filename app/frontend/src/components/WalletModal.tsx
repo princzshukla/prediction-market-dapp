@@ -52,6 +52,8 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 
   const isPhantomInstalled = typeof window !== 'undefined' && !!(window as any)?.solana?.isPhantom;
   const isSolflareInstalled = typeof window !== 'undefined' && !!(window as any)?.solflare;
+  const isMobileDevice = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const currentAppUrl = typeof window !== 'undefined' ? window.location.href : 'https://solpred.app';
 
   const copyAddress = () => {
     if (wallet.publicKey) {
@@ -68,6 +70,16 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     if (success) {
       onClose();
     }
+  };
+
+  const openPhantomMobileApp = () => {
+    const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(currentAppUrl)}?ref=${encodeURIComponent(currentAppUrl)}`;
+    window.location.href = deepLink;
+  };
+
+  const openSolflareMobileApp = () => {
+    const deepLink = `https://solflare.com/ul/v1/browse/${encodeURIComponent(currentAppUrl)}`;
+    window.location.href = deepLink;
   };
 
   const handleGenerateDemo = () => {
@@ -212,7 +224,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
           ) : (
             /* Disconnected Options */
             <div className="space-y-3">
-              {/* Phantom Button */}
+              {/* Primary Connect Button */}
               <button
                 onClick={handleConnectPhantom}
                 disabled={connectingPhantom}
@@ -224,18 +236,22 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                   </div>
                   <div className="text-left">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-slate-100">Phantom Wallet</span>
+                      <span className="font-bold text-sm text-slate-100">
+                        {isPhantomInstalled ? 'Phantom Wallet' : 'In-App Mobile Wallet'}
+                      </span>
                       {isPhantomInstalled ? (
                         <span className="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded font-semibold">
                           Detected
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 text-[10px] bg-slate-800 text-slate-400 rounded">
-                          Extension
+                        <span className="px-2 py-0.5 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded font-semibold">
+                          Solana
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400">Connect via browser extension</p>
+                    <p className="text-xs text-slate-400">
+                      {isPhantomInstalled ? 'Connect via browser extension' : 'Connect via window.solana'}
+                    </p>
                   </div>
                 </div>
                 {connectingPhantom ? (
@@ -244,6 +260,35 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                   <CheckCircle2 className="w-5 h-5 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </button>
+
+              {/* Mobile Wallet Deep-Link Options (When on mobile browser without injected extension) */}
+              {isMobileDevice && !isPhantomInstalled && (
+                <div className="p-3 bg-purple-950/30 border border-purple-500/20 rounded-2xl space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-300">
+                    <ExternalLink className="w-4 h-4 text-purple-400" />
+                    <span>Open in Mobile Wallet App</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-normal">
+                    Opening in Safari/Chrome on phone? Tap below to launch directly inside Phantom or Solflare app's Web3 browser:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      onClick={openPhantomMobileApp}
+                      className="py-2.5 px-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <span>Phantom App</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={openSolflareMobileApp}
+                      className="py-2.5 px-3 bg-amber-600/90 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <span>Solflare App</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Demo Test Keypair */}
               <button
@@ -261,7 +306,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                         15 SOL
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">Zero installation test wallet with 15 SOL</p>
+                    <p className="text-xs text-slate-400">Zero-install browser test wallet with 15 SOL</p>
                   </div>
                 </div>
                 <CheckCircle2 className="w-5 h-5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
