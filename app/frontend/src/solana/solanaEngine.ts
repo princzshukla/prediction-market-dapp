@@ -1,6 +1,6 @@
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import type{ Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types';
+import type { Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types';
 import {
   PROGRAM_ID,
   buildCreateMarketInstruction,
@@ -133,6 +133,13 @@ export class SolanaEngine {
     localStorage.setItem(LOCAL_STORAGE_KEYS.TX_LOGS, JSON.stringify(this.txLogs));
   }
 
+  private saveWalletBalance() {
+    if (this.wallet.publicKey) {
+      localStorage.setItem(`solana_prediction_bal_${this.wallet.publicKey}`, this.wallet.balanceLamports.toString());
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, this.wallet.balanceLamports.toString());
+  }
+
   private initWallet() {
     // Check if Phantom is connected or Ephemeral key exists
     const savedSecret = localStorage.getItem(LOCAL_STORAGE_KEYS.EPHEMERAL_KEY);
@@ -140,19 +147,20 @@ export class SolanaEngine {
       try {
         const secretKey = bs58.decode(savedSecret);
         const kp = Keypair.fromSecretKey(secretKey);
-        const savedBalance = localStorage.getItem(LOCAL_STORAGE_KEYS.BALANCE);
-        const balance = savedBalance ? parseInt(savedBalance, 10) : 10 * LAMPORTS_PER_SOL;
+        const pubKey = kp.publicKey.toBase58();
+        const savedBal = localStorage.getItem(`solana_prediction_bal_${pubKey}`) || localStorage.getItem(LOCAL_STORAGE_KEYS.BALANCE);
+        const balance = savedBal ? parseInt(savedBal, 10) : 15 * LAMPORTS_PER_SOL;
 
         this.wallet = {
           connected: true,
-          publicKey: kp.publicKey.toBase58(),
+          publicKey: pubKey,
           balanceLamports: balance,
           walletType: 'ephemeral',
           ephemeralSecretKey: savedSecret,
         };
 
         // Load positions for this wallet
-        this.loadUserPositions(kp.publicKey.toBase58());
+        this.loadUserPositions(pubKey);
       } catch {
         this.generateEphemeralKeypair();
       }
@@ -167,17 +175,18 @@ export class SolanaEngine {
     localStorage.setItem(LOCAL_STORAGE_KEYS.EPHEMERAL_KEY, secretStr);
 
     const initialBalance = 15 * LAMPORTS_PER_SOL; // 15 SOL
-    localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, initialBalance.toString());
+    const pubKey = kp.publicKey.toBase58();
 
     this.wallet = {
       connected: true,
-      publicKey: kp.publicKey.toBase58(),
+      publicKey: pubKey,
       balanceLamports: initialBalance,
       walletType: 'ephemeral',
       ephemeralSecretKey: secretStr,
     };
 
-    this.loadUserPositions(kp.publicKey.toBase58());
+    this.saveWalletBalance();
+    this.loadUserPositions(pubKey);
     this.notify();
     return this.wallet;
   }
@@ -188,10 +197,13 @@ export class SolanaEngine {
       try {
         const response = await solana.connect();
         const pkStr = response.publicKey.toString();
+        const savedBal = localStorage.getItem(`solana_prediction_bal_${pkStr}`);
+        const initialBal = savedBal ? parseInt(savedBal, 10) : 10 * LAMPORTS_PER_SOL;
+
         this.wallet = {
           connected: true,
           publicKey: pkStr,
-          balanceLamports: 2 * LAMPORTS_PER_SOL,
+          balanceLamports: initialBal,
           walletType: 'phantom',
         };
         this.loadUserPositions(pkStr);
@@ -253,7 +265,7 @@ export class SolanaEngine {
 
     // Simulation / Fallback
     this.wallet.balanceLamports += lamports;
-    localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, this.wallet.balanceLamports.toString());
+    this.saveWalletBalance();
     const mockSig = this.generateMockSignature();
     this.addLog('airdrop', 'success', `Airdropped ${solAmount} SOL to wallet`, mockSig);
     this.notify();
@@ -262,29 +274,40 @@ export class SolanaEngine {
 
   public async refreshBalance() {
     if (!this.wallet.publicKey) return;
+    const pubKey = this.wallet.publicKey;
     try {
-      const pk = new PublicKey(this.wallet.publicKey);
+      const pk = new PublicKey(pubKey);
       if (this.network === 'devnet' || this.network === 'mainnet-beta') {
-        const balance = await this.connection.getBalance(pk);
-        this.wallet.balanceLamports = balance;
-      } else {
-        // Simulation mode: try fetching devnet balance first if real wallet, else fallback to simulated balance
         try {
-          const devnetConnection = new Connection(NETWORKS['devnet'].endpoint, 'confirmed');
-          const realBalance = await devnetConnection.getBalance(pk);
-          if (realBalance > 0) {
-            this.wallet.balanceLamports = realBalance;
-          } else if (this.wallet.balanceLamports === 0) {
-            this.wallet.balanceLamports = 5 * LAMPORTS_PER_SOL; // Default 5 SOL test balance for simulation
+          const onChainBalance = await this.connection.getBalance(pk);
+          // Only update if devnet returned balance
+          this.wallet.balanceLamports = onChainBalance;
+          this.saveWalletBalance();
+        } catch (e) {
+          console.warn('Could not fetch devnet balance:', e);
+        }
+      } else {
+        // Simulation mode: Check per-wallet stored balance first so bet deductions persist!
+        const savedBal = localStorage.getItem(`solana_prediction_bal_${pubKey}`) || localStorage.getItem(LOCAL_STORAGE_KEYS.BALANCE);
+        if (savedBal !== null && !isNaN(Number(savedBal))) {
+          this.wallet.balanceLamports = Number(savedBal);
+        } else {
+          try {
+            const devnetConnection = new Connection(NETWORKS['devnet'].endpoint, 'confirmed');
+            const realBalance = await devnetConnection.getBalance(pk);
+            if (realBalance > 0) {
+              this.wallet.balanceLamports = realBalance;
+            } else {
+              this.wallet.balanceLamports = 15 * LAMPORTS_PER_SOL;
+            }
+          } catch {
+            this.wallet.balanceLamports = 15 * LAMPORTS_PER_SOL;
           }
-        } catch {
-          if (this.wallet.balanceLamports === 0) {
-            this.wallet.balanceLamports = 5 * LAMPORTS_PER_SOL;
-          }
+          this.saveWalletBalance();
         }
       }
     } catch (e) {
-      console.warn('Could not fetch on-chain balance:', e);
+      console.warn('Could not refresh balance:', e);
     }
     this.notify();
   }
@@ -413,9 +436,25 @@ export class SolanaEngine {
 
     let signature = this.generateMockSignature();
 
+    // If Devnet and Phantom wallet connected, attempt on-chain transaction
+    if (this.network === 'devnet' && this.wallet.walletType === 'phantom') {
+      try {
+        const solana = (window as any).solana;
+        if (solana && solana.isPhantom) {
+          const tx = new Transaction().add(instruction);
+          tx.feePayer = userPk;
+          tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+          const signedTx = await solana.signAndSendTransaction(tx);
+          signature = signedTx.signature;
+        }
+      } catch (e: any) {
+        console.warn('On-chain place bet fallback to local simulation:', e.message);
+      }
+    }
+
     // Deduct SOL from wallet balance
-    this.wallet.balanceLamports -= amountLamports;
-    localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, this.wallet.balanceLamports.toString());
+    this.wallet.balanceLamports = Math.max(0, this.wallet.balanceLamports - amountLamports);
+    this.saveWalletBalance();
 
     // Update Market Pool
     if (betYes) {
@@ -550,7 +589,7 @@ export class SolanaEngine {
     this.savePositions();
 
     this.wallet.balanceLamports += totalPayoutLamports;
-    localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, this.wallet.balanceLamports.toString());
+    this.saveWalletBalance();
 
     const payoutSol = totalPayoutLamports / LAMPORTS_PER_SOL;
 
