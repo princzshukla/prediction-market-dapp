@@ -5,8 +5,6 @@ import {
   Droplets,
   Copy,
   Check,
-  ExternalLink,
-   Menu, X,
   Code2,
   History,
   PlusCircle,
@@ -14,21 +12,23 @@ import {
   Award,
   ShieldCheck,
   RefreshCw,
+  Menu,
+  X,
 } from 'lucide-react';
 import type { WalletState, NetworkType } from '../types';
 import { PROGRAM_ID_STR } from '../solana/anchorClient';
-import { NETWORKS } from '../solana/solanaEngine';
 
 interface HeaderProps {
   wallet: WalletState;
   network: NetworkType;
   onSetNetwork: (network: NetworkType) => void;
-  onConnectPhantom: () => void;
+  onConnectPhantom: () => Promise<boolean>;
   onGenerateEphemeral: () => void;
   onRequestAirdrop: () => void;
   onOpenCreateModal: () => void;
   onOpenIdlModal: () => void;
   onOpenTxLogs: () => void;
+  onOpenWalletModal: () => void;
   activeTab: 'explore' | 'positions' | 'creator';
   setActiveTab: (tab: 'explore' | 'positions' | 'creator') => void;
   airdropping: boolean;
@@ -44,12 +44,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCreateModal,
   onOpenIdlModal,
   onOpenTxLogs,
+  onOpenWalletModal,
   activeTab,
   setActiveTab,
   airdropping,
 }) => {
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [copiedProgram, setCopiedProgram] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const copyToClipboard = (text: string, isProgram = false) => {
     navigator.clipboard.writeText(text);
@@ -63,7 +65,6 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const formattedBalance = (wallet.balanceLamports / 1e9).toFixed(3);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 text-slate-100">
@@ -207,40 +208,26 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
 
-                {/* Address */}
+                {/* Account Trigger */}
                 <button
-                  onClick={() => copyToClipboard(wallet.publicKey!)}
-                  className="px-2 py-1 text-xs font-mono text-purple-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1"
-                  title="Copy Wallet Address"
+                  onClick={onOpenWalletModal}
+                  className="px-2 py-1 text-xs font-mono text-purple-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+                  title="Manage Wallet Account"
                 >
-                  <Wallet className="w-3.5 h-3.5 text-purple-400 hidden xs:inline" />
+                  <Wallet className="w-3.5 h-3.5 text-purple-400" />
                   <span>
                     {wallet.publicKey.slice(0, 3)}...{wallet.publicKey.slice(-3)}
                   </span>
-                  {copiedAddress ? (
-                    <Check className="w-3 h-3 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3 h-3 text-slate-500 hidden xs:inline" />
-                  )}
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={onConnectPhantom}
-                  className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition-all shadow-md shadow-purple-600/30 flex items-center gap-1"
-                >
-                  <Wallet className="w-3.5 h-3.5" />
-                  <span>Phantom</span>
-                </button>
-                <button
-                  onClick={onGenerateEphemeral}
-                  className="hidden xs:flex px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg transition-colors items-center gap-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Demo Key</span>
-                </button>
-              </div>
+              <button
+                onClick={onOpenWalletModal}
+                className="px-3 sm:px-4 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl transition-all shadow-md shadow-purple-600/30 flex items-center gap-1.5 active:scale-95"
+              >
+                <Wallet className="w-3.5 h-3.5" />
+                <span>Connect Wallet</span>
+              </button>
             )}
 
             {/* Mobile Menu Toggle Button */}
@@ -357,3 +344,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

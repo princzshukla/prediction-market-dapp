@@ -1,6 +1,6 @@
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import type { Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types.ts';
+import type { Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types';
 import {
   PROGRAM_ID,
   buildCreateMarketInstruction,
@@ -10,8 +10,8 @@ import {
   deriveUserPositionPDA,
   deriveMarketPDA,
   calculatePayout,
-} from './anchorClient.ts';
-import { getInitialMarkets, getInitialUserPositions, MOCK_CREATOR_KEY } from './mocData.ts';
+} from './anchorClient';
+import { getInitialMarkets, getInitialUserPositions, MOCK_CREATOR_KEY } from './mocData';
 
 const LOCAL_STORAGE_KEYS = {
   MARKETS: 'solana_prediction_markets_v1',
@@ -203,12 +203,13 @@ export class SolanaEngine {
         return false;
       }
     } else {
-      alert('Phantom wallet extension not detected in this browser window. Using simulated/ephemeral Solana wallet instead.');
+      alert('Phantom wallet extension not detected in this browser window. You can use the Demo Keypair option to connect instantly without an extension!');
       return false;
     }
   }
 
   public disconnectWallet() {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.EPHEMERAL_KEY);
     this.wallet = {
       connected: false,
       publicKey: null,

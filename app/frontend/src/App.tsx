@@ -8,9 +8,10 @@ import { UserPositionsView } from './components/UserPositionView';
 import { ResolveMarketModal } from './components/ResolveMarketModal';
 import { IdlInspectorModal } from './components/IdlInspectorModal';
 import { TxHistoryDrawer } from './components/TxHistoryDrawer';
+import { WalletModal } from './components/WalletModal';
 import { solanaEngine } from './solana/solanaEngine';
-import type{ Market, UserPosition, WalletState, NetworkType } from './types';
-import { Search, Filter, PlusCircle, TrendingUp, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import type { Market, UserPosition, WalletState, NetworkType } from './types';
+import { Search, Filter, PlusCircle, TrendingUp, Sparkles, AlertCircle, RefreshCw, } from 'lucide-react';
 
 export default function App() {
   const [wallet, setWallet] = useState<WalletState>(solanaEngine.getWallet());
@@ -33,6 +34,7 @@ export default function App() {
   const [resolveTargetMarket, setResolveTargetMarket] = useState<Market | null>(null);
   const [isIdlModalOpen, setIsIdlModalOpen] = useState<boolean>(false);
   const [isTxDrawerOpen, setIsTxDrawerOpen] = useState<boolean>(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState<boolean>(false);
 
   // Subscribe to engine state changes
   useEffect(() => {
@@ -45,8 +47,9 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  const handleConnectPhantom = async () => {
+  const handleConnectPhantom = async (): Promise<boolean> => {
     await solanaEngine.connectPhantomWallet();
+    return true;
   };
 
   const handleGenerateEphemeral = () => {
@@ -124,6 +127,7 @@ export default function App() {
         onOpenCreateModal={() => setIsCreateModalOpen(true)}
         onOpenIdlModal={() => setIsIdlModalOpen(true)}
         onOpenTxLogs={() => setIsTxDrawerOpen(true)}
+        onOpenWalletModal={() => setIsWalletModalOpen(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         airdropping={airdropping}
@@ -323,6 +327,19 @@ export default function App() {
       {isIdlModalOpen && <IdlInspectorModal onClose={() => setIsIdlModalOpen(false)} />}
 
       {isTxDrawerOpen && <TxHistoryDrawer logs={txLogs} onClose={() => setIsTxDrawerOpen(false)} />}
+
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        wallet={wallet}
+        network={network}
+        onSetNetwork={handleSetNetwork}
+        onConnectPhantom={handleConnectPhantom}
+        onGenerateEphemeral={handleGenerateEphemeral}
+        onRequestAirdrop={handleRequestAirdrop}
+        onDisconnect={() => solanaEngine.disconnectWallet()}
+        airdropping={airdropping}
+      />
     </div>
   );
 }
