@@ -160,53 +160,53 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({
       (winningOutcome === false && userPosition.no_amount > 0));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl my-auto">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-800/80 flex items-start justify-between gap-3 sticky top-0 bg-slate-900/95 backdrop-blur-md z-10">
+        <div className="p-6 border-b border-slate-800/80 flex items-start justify-between gap-4 sticky top-0 bg-slate-900/95 backdrop-blur-md z-10">
           <div>
-            <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-              <span className="px-2.5 py-1 text-[11px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg uppercase tracking-wider">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-1 text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg uppercase tracking-wider">
                 {market.category || 'Crypto'}
               </span>
-              <span className="text-[11px] font-mono text-slate-400">Market ID: #{market.market_id}</span>
+              <span className="text-xs font-mono text-slate-400">Market ID: #{market.market_id}</span>
             </div>
-            <h2 className="text-lg sm:text-2xl font-bold text-slate-100 leading-snug">{market.question}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-100 leading-snug">{market.question}</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0"
+            className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Analytics & Probability Chart */}
-          <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+          <div className="lg:col-span-7 space-y-6">
             {/* Probability Overview Bar */}
-            <div className="bg-slate-950/80 p-4 sm:p-5 rounded-2xl border border-slate-800">
+            <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-slate-400">Current Probability Pool</span>
                 <span className="text-xs font-mono text-amber-400 font-bold">Total Pool: {totalPoolSol} SOL</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3 my-3">
-                <div className="p-2.5 sm:p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl">
+              <div className="grid grid-cols-2 gap-3 my-3">
+                <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl">
                   <div className="text-xs text-emerald-400 font-medium">YES Pool</div>
-                  <div className="text-lg sm:text-xl font-bold font-mono text-emerald-300">{yesPercent}%</div>
-                  <div className="text-[10px] sm:text-[11px] text-slate-400 font-mono">{(market.yes_pool / 1e9).toFixed(2)} SOL</div>
+                  <div className="text-xl font-bold font-mono text-emerald-300">{yesPercent}%</div>
+                  <div className="text-[11px] text-slate-400 font-mono">{(market.yes_pool / 1e9).toFixed(2)} SOL</div>
                 </div>
 
-                <div className="p-2.5 sm:p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl">
+                <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl">
                   <div className="text-xs text-rose-400 font-medium">NO Pool</div>
-                  <div className="text-lg sm:text-xl font-bold font-mono text-rose-300">{noPercent}%</div>
-                  <div className="text-[10px] sm:text-[11px] text-slate-400 font-mono">{(market.no_pool / 1e9).toFixed(2)} SOL</div>
+                  <div className="text-xl font-bold font-mono text-rose-300">{noPercent}%</div>
+                  <div className="text-[11px] text-slate-400 font-mono">{(market.no_pool / 1e9).toFixed(2)} SOL</div>
                 </div>
               </div>
 
               {/* Chart */}
-              <div className="h-36 sm:h-44 w-full mt-4">
+              <div className="h-44 w-full mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
