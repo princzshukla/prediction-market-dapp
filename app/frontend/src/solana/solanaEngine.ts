@@ -135,6 +135,7 @@ export class SolanaEngine {
 
   private saveWalletBalance() {
     if (this.wallet.publicKey) {
+      
       localStorage.setItem(`solana_prediction_bal_${this.wallet.publicKey}`, this.wallet.balanceLamports.toString());
     }
     localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, this.wallet.balanceLamports.toString());

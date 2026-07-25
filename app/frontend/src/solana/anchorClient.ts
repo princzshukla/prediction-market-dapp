@@ -1,6 +1,8 @@
 import { PublicKey, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import { Buffer } from 'buffer';
+import { PREDICTION_MARKET_IDL } from './idl';
 
+export { PREDICTION_MARKET_IDL };
 export const PROGRAM_ID_STR = 'PjG6i92qPk5hpFhmNBd1RWuPt3keH9xBSqn46dc4b5w';
 export const PROGRAM_ID = new PublicKey(PROGRAM_ID_STR);
 
