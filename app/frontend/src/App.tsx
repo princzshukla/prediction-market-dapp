@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { StatsBar } from './components/StatsBar';
 import { MarketCard } from './components/MarketCard';
@@ -10,7 +10,7 @@ import { IdlInspectorModal } from './components/IdlInspectorModal';
 import { TxHistoryDrawer } from './components/TxHistoryDrawer';
 import { WalletModal } from './components/WalletModal';
 import { solanaEngine } from './solana/solanaEngine';
-import type{ Market, UserPosition, WalletState, NetworkType } from './types';
+import type { Market, UserPosition, WalletState, NetworkType } from './types';
 import { Search, Filter, PlusCircle, TrendingUp, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -47,8 +47,8 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  const handleConnectPhantom = async () => {
-    await solanaEngine.connectPhantomWallet();
+  const handleConnectPhantom = async (): Promise<boolean> => {
+    return await solanaEngine.connectPhantomWallet();
   };
 
   const handleGenerateEphemeral = () => {
