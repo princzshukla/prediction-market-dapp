@@ -30,7 +30,7 @@ export const NETWORKS: Record<NetworkType, { name: string; endpoint: string }> =
 };
 
 export class SolanaEngine {
-  private network: NetworkType = 'simulation';
+  private network: NetworkType = 'devnet';
   private connection: Connection;
   private wallet: WalletState = {
     connected: false,
@@ -135,7 +135,6 @@ export class SolanaEngine {
 
   private saveWalletBalance() {
     if (this.wallet.publicKey) {
-      
       localStorage.setItem(`solana_prediction_bal_${this.wallet.publicKey}`, this.wallet.balanceLamports.toString());
     }
     localStorage.setItem(LOCAL_STORAGE_KEYS.BALANCE, this.wallet.balanceLamports.toString());
@@ -198,17 +197,21 @@ export class SolanaEngine {
       try {
         const response = await solana.connect();
         const pkStr = response.publicKey.toString();
-        const savedBal = localStorage.getItem(`solana_prediction_bal_${pkStr}`);
-        const initialBal = savedBal ? parseInt(savedBal, 10) : 10 * LAMPORTS_PER_SOL;
+
+        // Force network to devnet when Phantom connects
+        this.network = 'devnet';
+        localStorage.setItem(LOCAL_STORAGE_KEYS.NETWORK, 'devnet');
+        this.connection = new Connection(NETWORKS['devnet'].endpoint, 'confirmed');
 
         this.wallet = {
           connected: true,
           publicKey: pkStr,
-          balanceLamports: initialBal,
+          balanceLamports: 0,
           walletType: 'phantom',
         };
+
         this.loadUserPositions(pkStr);
-        await this.refreshBalance();
+        await this.refreshBalance(); // Fetches real on-chain SOL balance
         this.notify();
         return true;
       } catch (err) {
@@ -216,7 +219,7 @@ export class SolanaEngine {
         return false;
       }
     } else {
-      alert('Phantom wallet extension not detected in this browser window. You can use the Demo Keypair option to connect instantly without an extension!');
+      alert('Phantom wallet extension not detected!');
       return false;
     }
   }
@@ -278,37 +281,21 @@ export class SolanaEngine {
     const pubKey = this.wallet.publicKey;
     try {
       const pk = new PublicKey(pubKey);
-      if (this.network === 'devnet' || this.network === 'mainnet-beta') {
-        try {
-          const onChainBalance = await this.connection.getBalance(pk);
-          // Only update if devnet returned balance
-          this.wallet.balanceLamports = onChainBalance;
-          this.saveWalletBalance();
-        } catch (e) {
-          console.warn('Could not fetch devnet balance:', e);
-        }
+      if (this.wallet.walletType === 'phantom' || this.network === 'devnet' || this.network === 'mainnet-beta') {
+        // Query real on-chain balance from Solana RPC cluster
+        const onChainBalance = await this.connection.getBalance(pk);
+        this.wallet.balanceLamports = onChainBalance;
+        this.saveWalletBalance();
       } else {
-        // Simulation mode: Check per-wallet stored balance first so bet deductions persist!
-        const savedBal = localStorage.getItem(`solana_prediction_bal_${pubKey}`) || localStorage.getItem(LOCAL_STORAGE_KEYS.BALANCE);
+        const savedBal = localStorage.getItem(`solana_prediction_bal_${pubKey}`);
         if (savedBal !== null && !isNaN(Number(savedBal))) {
           this.wallet.balanceLamports = Number(savedBal);
         } else {
-          try {
-            const devnetConnection = new Connection(NETWORKS['devnet'].endpoint, 'confirmed');
-            const realBalance = await devnetConnection.getBalance(pk);
-            if (realBalance > 0) {
-              this.wallet.balanceLamports = realBalance;
-            } else {
-              this.wallet.balanceLamports = 15 * LAMPORTS_PER_SOL;
-            }
-          } catch {
-            this.wallet.balanceLamports = 15 * LAMPORTS_PER_SOL;
-          }
-          this.saveWalletBalance();
+          this.wallet.balanceLamports = 15 * LAMPORTS_PER_SOL;
         }
       }
     } catch (e) {
-      console.warn('Could not refresh balance:', e);
+      console.warn('Could not refresh balance from RPC:', e);
     }
     this.notify();
   }

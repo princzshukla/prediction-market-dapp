@@ -188,16 +188,16 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Wallet Section */}
             {wallet.connected && wallet.publicKey ? (
-              <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl max-w-[180px] sm:max-w-none">
-                {/* Balance & Airdrop (Desktop/Tablet) */}
-                <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800/80">
-                  <span className="text-xs font-bold font-mono text-emerald-400">
-                    {formattedBalance} SOL
+              <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl shrink-0">
+                {/* Balance Badge (Responsive text size & padding on mobile) */}
+                <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 bg-slate-950 rounded-lg border border-slate-800/80 shrink-0">
+                  <span className="text-[11px] sm:text-xs font-bold font-mono text-emerald-400">
+                    {formattedBalance} <span className="text-[10px] sm:text-xs text-emerald-300 font-semibold">SOL</span>
                   </span>
                   <button
                     onClick={onRequestAirdrop}
                     disabled={airdropping}
-                    className="p-1 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 rounded transition-colors disabled:opacity-50"
+                    className="hidden sm:block p-0.5 sm:p-1 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 rounded transition-colors disabled:opacity-50"
                     title="Request 5 SOL Airdrop"
                   >
                     {airdropping ? (
@@ -208,14 +208,14 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
 
-                {/* Account Trigger (Mobile & Desktop) */}
+                {/* Account Trigger */}
                 <button
                   onClick={onOpenWalletModal}
-                  className="px-2.5 py-1 text-xs font-mono text-purple-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+                  className="px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-mono text-purple-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1 shrink-0"
                   title="Manage Wallet Account"
                 >
                   <Wallet className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                  <span className="truncate">
+                  <span className="hidden xs:inline truncate max-w-[60px] sm:max-w-none">
                     {wallet.publicKey.slice(0, 3)}...{wallet.publicKey.slice(-3)}
                   </span>
                 </button>
