@@ -45,19 +45,22 @@ export const MarketCard: React.FC<MarketCardProps> = ({
         const days = Math.floor(diff / 86400);
         const hours = Math.floor((diff % 86400) / 3600);
         const mins = Math.floor((diff % 3600) / 60);
+        const secs = diff % 60;
 
         if (days > 0) {
           setTimeLeft(`${days}d ${hours}h left`);
         } else if (hours > 0) {
           setTimeLeft(`${hours}h ${mins}m left`);
+        } else if (mins > 0) {
+          setTimeLeft(`${mins}m ${secs.toString().padStart(2, '0')}s left`);
         } else {
-          setTimeLeft(`${mins}m left`);
+          setTimeLeft(`${secs}s left`);
         }
       }
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 10000);
+    const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, [market.resolution_time]);
 

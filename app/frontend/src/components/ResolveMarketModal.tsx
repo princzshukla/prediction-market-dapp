@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type{ Market } from '../types';
+import type { Market } from '../types';
 import { X, CheckCircle2, XCircle, Clock, Shield, AlertCircle, Sparkles } from 'lucide-react';
 
 interface ResolveMarketModalProps {
@@ -63,6 +63,13 @@ export const ResolveMarketModal: React.FC<ResolveMarketModalProps> = ({
               <span>Total Volume:</span>
               <span className="text-amber-400 font-bold">{totalPoolSol} SOL</span>
             </div>
+          </div>
+
+          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs text-indigo-300 flex items-start gap-2">
+            <Shield className="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" />
+            <span>
+              <strong>How payouts work:</strong> Resolving sets the winning outcome (`resolved = true`). Winning bettors can then click <strong>"Claim Winnings"</strong> to withdraw their SOL payout into their wallet.
+            </span>
           </div>
 
           <div>
