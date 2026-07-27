@@ -281,17 +281,30 @@ export class SolanaEngine {
     const pubKey = this.wallet.publicKey;
     try {
       const pk = new PublicKey(pubKey);
-      if (this.wallet.walletType === 'phantom' || this.network === 'devnet' || this.network === 'mainnet-beta') {
-        // Query real on-chain balance from Solana RPC cluster
-        const onChainBalance = await this.connection.getBalance(pk);
-        this.wallet.balanceLamports = onChainBalance;
-        this.saveWalletBalance();
+      const savedBalStr = localStorage.getItem(`solana_prediction_bal_${pubKey}`);
+      const savedBal = savedBalStr !== null && !isNaN(Number(savedBalStr)) ? Number(savedBalStr) : null;
+
+      if (this.wallet.walletType === 'phantom') {
+        try {
+          const onChainBalance = await this.connection.getBalance(pk);
+          // Preserve local balance additions (such as claimed winnings) if higher
+          if (savedBal !== null && savedBal > onChainBalance) {
+            this.wallet.balanceLamports = savedBal;
+          } else {
+            this.wallet.balanceLamports = onChainBalance;
+            this.saveWalletBalance();
+          }
+        } catch {
+          if (savedBal !== null) {
+            this.wallet.balanceLamports = savedBal;
+          }
+        }
       } else {
-        const savedBal = localStorage.getItem(`solana_prediction_bal_${pubKey}`);
-        if (savedBal !== null && !isNaN(Number(savedBal))) {
-          this.wallet.balanceLamports = Number(savedBal);
+        if (savedBal !== null) {
+          this.wallet.balanceLamports = savedBal;
         } else {
           this.wallet.balanceLamports = 15 * LAMPORTS_PER_SOL;
+          this.saveWalletBalance();
         }
       }
     } catch (e) {
