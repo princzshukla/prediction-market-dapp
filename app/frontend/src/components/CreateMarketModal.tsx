@@ -16,7 +16,7 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({
 }) => {
   const [question, setQuestion] = useState<string>('');
   const [category, setCategory] = useState<'Crypto' | 'AI & Tech' | 'Space' | 'Governance' | 'Economics'>('Crypto');
-  const [daysFromNow, setDaysFromNow] = useState<number>(7);
+  const [durationSeconds, setDurationSeconds] = useState<number>(600); // Default 10 Minutes
   const [customMarketId, setCustomMarketId] = useState<string>(
     Math.floor(Math.random() * 900000 + 100000).toString()
   );
@@ -49,7 +49,7 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({
       return;
     }
 
-    const resolutionUnix = Math.floor(Date.now() / 1000) + daysFromNow * 86400;
+    const resolutionUnix = Math.floor(Date.now() / 1000) + durationSeconds;
 
     try {
       setSubmitting(true);
@@ -117,17 +117,22 @@ export const CreateMarketModal: React.FC<CreateMarketModalProps> = ({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Duration (Days)</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-purple-400" />
+                Bet Duration
+              </label>
               <select
-                value={daysFromNow}
-                onChange={(e) => setDaysFromNow(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                value={durationSeconds}
+                onChange={(e) => setDurationSeconds(Number(e.target.value))}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 text-xs focus:outline-none focus:border-purple-500 font-medium"
               >
-                <option value={1}>1 Day (24 hours)</option>
-                <option value={3}>3 Days</option>
-                <option value={7}>7 Days (1 Week)</option>
-                <option value={14}>14 Days (2 Weeks)</option>
-                <option value={30}>30 Days (1 Month)</option>
+                <option value={600}>⚡ 10 Minutes (Quick Bet)</option>
+                <option value={3600}>⏰ 1 Hour</option>
+                <option value={86400}>1 Day (24 hours)</option>
+                <option value={259200}>3 Days</option>
+                <option value={604800}>7 Days (1 Week)</option>
+                <option value={1209600}>14 Days (2 Weeks)</option>
+                <option value={2592000}>30 Days (1 Month)</option>
               </select>
             </div>
           </div>
