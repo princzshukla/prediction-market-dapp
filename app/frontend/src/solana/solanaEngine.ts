@@ -281,25 +281,18 @@ export class SolanaEngine {
     const pubKey = this.wallet.publicKey;
     try {
       const pk = new PublicKey(pubKey);
-      const savedBalStr = localStorage.getItem(`solana_prediction_bal_${pubKey}`);
-      const savedBal = savedBalStr !== null && !isNaN(Number(savedBalStr)) ? Number(savedBalStr) : null;
 
       if (this.wallet.walletType === 'phantom') {
         try {
           const onChainBalance = await this.connection.getBalance(pk);
-          // Preserve local balance additions (such as claimed winnings) if higher
-          if (savedBal !== null && savedBal > onChainBalance) {
-            this.wallet.balanceLamports = savedBal;
-          } else {
-            this.wallet.balanceLamports = onChainBalance;
-            this.saveWalletBalance();
-          }
-        } catch {
-          if (savedBal !== null) {
-            this.wallet.balanceLamports = savedBal;
-          }
+          this.wallet.balanceLamports = onChainBalance;
+          this.saveWalletBalance();
+        } catch (e) {
+          console.warn('Could not fetch Phantom balance from Solana RPC:', e);
         }
       } else {
+        const savedBalStr = localStorage.getItem(`solana_prediction_bal_${pubKey}`);
+        const savedBal = savedBalStr !== null && !isNaN(Number(savedBalStr)) ? Number(savedBalStr) : null;
         if (savedBal !== null) {
           this.wallet.balanceLamports = savedBal;
         } else {
@@ -308,7 +301,7 @@ export class SolanaEngine {
         }
       }
     } catch (e) {
-      console.warn('Could not refresh balance from RPC:', e);
+      console.warn('Could not refresh balance:', e);
     }
     this.notify();
   }
@@ -583,14 +576,34 @@ export class SolanaEngine {
       market.market_id
     );
 
-    const signature = this.generateMockSignature();
+    let signature = this.generateMockSignature();
+
+    // If Devnet and Phantom wallet connected, attempt on-chain transaction
+    if (this.network === 'devnet' && this.wallet.walletType === 'phantom') {
+      try {
+        const solana = (window as any).solana;
+        if (solana && solana.isPhantom) {
+          const tx = new Transaction().add(instruction);
+          tx.feePayer = userPk;
+          tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+          const signedTx = await solana.signAndSendTransaction(tx);
+          signature = signedTx.signature;
+        }
+      } catch (e: any) {
+        console.warn('On-chain claim fallback to local simulation:', e.message);
+      }
+    }
 
     // Mark claimed & transfer lamports
     position.claimed = true;
     this.savePositions();
 
-    this.wallet.balanceLamports += totalPayoutLamports;
-    this.saveWalletBalance();
+    if (this.wallet.walletType === 'phantom') {
+      await this.refreshBalance();
+    } else {
+      this.wallet.balanceLamports += totalPayoutLamports;
+      this.saveWalletBalance();
+    }
 
     const payoutSol = totalPayoutLamports / LAMPORTS_PER_SOL;
 
