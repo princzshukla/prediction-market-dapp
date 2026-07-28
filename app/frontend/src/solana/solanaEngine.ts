@@ -1,4 +1,4 @@
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import bs58 from 'bs58';
 import type { Market, UserPosition, WalletState, TransactionLog, NetworkType } from '../types';
 import {
@@ -350,17 +350,24 @@ export class SolanaEngine {
 
     let signature = this.generateMockSignature();
 
-    // If Devnet and Phantom wallet
+    // If Devnet and Phantom wallet connected, execute real on-chain SOL transfer for market seed/rent
     if (this.network === 'devnet' && this.wallet.walletType === 'phantom') {
       try {
         const solana = (window as any).solana;
-        const tx = new Transaction().add(instruction);
-        tx.feePayer = creatorPk;
-        tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
-        const signedTx = await solana.signAndSendTransaction(tx);
-        signature = signedTx.signature;
+        if (solana && solana.isPhantom) {
+          const transferIx = SystemProgram.transfer({
+            fromPubkey: creatorPk,
+            toPubkey: marketPDA,
+            lamports: 1000000, // 0.001 SOL rent deposit
+          });
+          const tx = new Transaction().add(transferIx);
+          tx.feePayer = creatorPk;
+          tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+          const signedTx = await solana.signAndSendTransaction(tx);
+          signature = signedTx.signature;
+        }
       } catch (e: any) {
-        console.warn('On-chain creation fallback to simulation:', e.message);
+        console.warn('On-chain market creation fallback to simulation:', e.message);
       }
     }
 
@@ -430,19 +437,24 @@ export class SolanaEngine {
 
     let signature = this.generateMockSignature();
 
-    // If Devnet and Phantom wallet connected, attempt on-chain transaction
+    // If Devnet and Phantom wallet connected, send real on-chain SOL transfer to market PDA
     if (this.network === 'devnet' && this.wallet.walletType === 'phantom') {
       try {
         const solana = (window as any).solana;
         if (solana && solana.isPhantom) {
-          const tx = new Transaction().add(instruction);
+          const transferIx = SystemProgram.transfer({
+            fromPubkey: userPk,
+            toPubkey: marketPk,
+            lamports: amountLamports,
+          });
+          const tx = new Transaction().add(transferIx);
           tx.feePayer = userPk;
           tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
           const signedTx = await solana.signAndSendTransaction(tx);
           signature = signedTx.signature;
         }
       } catch (e: any) {
-        console.warn('On-chain place bet fallback to local simulation:', e.message);
+        console.warn('On-chain place bet transfer fallback:', e.message);
       }
     }
 
@@ -578,32 +590,12 @@ export class SolanaEngine {
 
     let signature = this.generateMockSignature();
 
-    // If Devnet and Phantom wallet connected, attempt on-chain transaction
-    if (this.network === 'devnet' && this.wallet.walletType === 'phantom') {
-      try {
-        const solana = (window as any).solana;
-        if (solana && solana.isPhantom) {
-          const tx = new Transaction().add(instruction);
-          tx.feePayer = userPk;
-          tx.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
-          const signedTx = await solana.signAndSendTransaction(tx);
-          signature = signedTx.signature;
-        }
-      } catch (e: any) {
-        console.warn('On-chain claim fallback to local simulation:', e.message);
-      }
-    }
-
-    // Mark claimed & transfer lamports
+    // Mark position as claimed & add payout lamports to app wallet balance
     position.claimed = true;
     this.savePositions();
 
-    if (this.wallet.walletType === 'phantom') {
-      await this.refreshBalance();
-    } else {
-      this.wallet.balanceLamports += totalPayoutLamports;
-      this.saveWalletBalance();
-    }
+    this.wallet.balanceLamports += totalPayoutLamports;
+    this.saveWalletBalance();
 
     const payoutSol = totalPayoutLamports / LAMPORTS_PER_SOL;
 
